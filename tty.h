@@ -2,7 +2,6 @@
  * Copyright (C) 2018  Jason Wang
  */
 
-
 #ifndef __TTY_H
 #define __TTY_H
 
@@ -31,6 +30,5 @@ tty_t *tty_open(const char *devp, tty_attrs_t attrs);
 void tty_close(tty_t *tty);
 int tty_recv(tty_t *tty, char *buffer, int len);
 int tty_send(tty_t *tty, char *buffer, int len);
-
 
 #endif
