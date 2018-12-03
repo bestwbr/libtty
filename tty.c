@@ -22,12 +22,12 @@ static int tty_openat(const char *devp)
 	fd = open(devp, O_RDWR | O_NOCTTY | O_NDELAY);
 	if (fd < 0) {
 		perror("tty_openat, open");
-		goto err0;
+		goto out;
 	}
 
 	return fd;
 
-err0:
+out:
 	return -1;
 }
 
@@ -37,7 +37,7 @@ static bool tty_set(tty_t *tty)
 
 	if (tcgetattr(tty->fd, &options)) {
 		perror("tty_set, tcgetattr");
-		goto err0;
+		goto out;
 	}
 
 	cfsetispeed(&options, tty->attrs->speed);
@@ -116,56 +116,46 @@ static bool tty_set(tty_t *tty)
 	tcflush(tty->fd, TCIFLUSH);
 	if (tcsetattr(tty->fd, TCSANOW, &options)) {
 		perror("tty_set, tcsetattr");
-		goto err0;
+		goto out;
 	}
 
 	return true;
-err0:
+out:
 	close(tty->fd);
 	return false;
 }
 
 tty_t *tty_open(const char *devp, tty_attrs_t attrs)
 {
-	tty_t *tty;
+	static tty_t tty;
 
-	tty = malloc(sizeof (*tty));
-	if (!tty) {
-		fprintf(stderr, "malloc tty structure failed\n");
-		goto err0;
-	}
-	memset(tty, 0, sizeof(*tty));
 	/* debug */
 	dprintf("openat %s\n", devp);
-	tty->fd = tty_openat(devp);
-	if (tty->fd == -1) {
+	tty.fd = tty_openat(devp);
+	if (tty.fd == -1) {
 		fprintf(stderr, "tty_openat %s failed\n", devp);
-		goto err1;
+		goto out;
 	}
 
-	tty->attrs = &attrs;
+	tty.attrs = &attrs;
 	/* debug */
 	dprintf("attrs: %d, %d, %d, %d, %c\n", tty->attrs->speed, tty->attrs->flow_ctrl, tty->attrs->databits, tty->attrs->stopbits, tty->attrs->parity);
-	if (!tty_set(tty)) {
+	if (!tty_set(&tty)) {
 		fprintf(stderr, "tty set attributes failed\n");
-		goto err2;
+		goto close_out;
 	}
 
-	return tty;
+	return &tty;
 
-err2:
-	close(tty->fd);
-err1:
-	free(tty);
-	tty = NULL;
-err0:
+close_out:
+	close(tty.fd);
+out:
 	return NULL;
 }
 
 void tty_close(tty_t *tty)
 {
 	close(tty->fd);
-	free(tty);
 	tty = NULL;
 }
 
