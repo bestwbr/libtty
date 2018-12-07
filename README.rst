@@ -30,19 +30,20 @@ usage
     	tty_attrs_t attrs;
 
     	if (argc < 3) {
-    		printf("%s [-r|-s] <tty path>\n");
+    		printf("%s [-r|-s] <tty path>\n", argv[0]);
     		goto err;
     	}
 
-    	attrs.speed     = B1500000;
+    	attrs.speed     = B115200;
     	attrs.flow_ctrl = 0;
     	attrs.databits  = 8;
     	attrs.stopbits  = 1;
     	attrs.parity    = 'N';
 
     	tty = tty_open(argv[2], attrs);
-    	if (tty->fd <= 0) {
+    	if (!tty) {
     		printf("tty_open failed\n");
+    		tty_close(tty);
     		goto err;
     	}
 
@@ -54,11 +55,11 @@ usage
     			else
     				printf("send data failed!\n");
 
-    			sleep(2);
+    			sleep(1);
     		}
     	} else {
-    		for(i = 0; i < 20; i++) {
-    			len = tty_recv(tty, rcvbuf, 127);
+    		for(i = 0; i < 1; i++) {
+    			len = tty_recv(tty, rcvbuf, 127, 10);
     			if(len > 0) {
     				rcvbuf[len] = '\0';
     				printf("receive data is %s\n", rcvbuf);
@@ -66,8 +67,6 @@ usage
     			} else {
     				printf("cannot receive data\n");
     			}
-
-    			sleep(2);
     		}
     	}
 

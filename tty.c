@@ -13,8 +13,6 @@
 
 #include "tty.h"
 
-#define dprintf(fmt, ...)
-
 static int tty_openat(const char *devp)
 {
 	int fd;
@@ -129,8 +127,6 @@ tty_t *tty_open(const char *devp, tty_attrs_t attrs)
 {
 	static tty_t tty;
 
-	/* debug */
-	dprintf("openat %s\n", devp);
 	tty.fd = tty_openat(devp);
 	if (tty.fd == -1) {
 		fprintf(stderr, "tty_openat %s failed\n", devp);
@@ -138,8 +134,6 @@ tty_t *tty_open(const char *devp, tty_attrs_t attrs)
 	}
 
 	tty.attrs = &attrs;
-	/* debug */
-	dprintf("attrs: %d, %d, %d, %d, %c\n", tty->attrs->speed, tty->attrs->flow_ctrl, tty->attrs->databits, tty->attrs->stopbits, tty->attrs->parity);
 	if (!tty_set(&tty)) {
 		fprintf(stderr, "tty set attributes failed\n");
 		goto close_out;
@@ -159,14 +153,14 @@ void tty_close(tty_t *tty)
 	tty = NULL;
 }
 
-int tty_recv(tty_t *tty, char *buffer, int len)
+int tty_recv(tty_t *tty, char *buffer, int len, unsigned int timeout)
 {
 	int rlen,fs_sel;
 	fd_set fs_read;
 	struct timeval time;
 	FD_ZERO(&fs_read);
 	FD_SET(tty->fd, &fs_read);
-	time.tv_sec = 10;
+	time.tv_sec = timeout;
 	time.tv_usec = 0;
 
 	fs_sel = select(tty->fd+1, &fs_read, NULL, NULL, &time);
