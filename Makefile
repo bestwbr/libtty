@@ -1,25 +1,35 @@
 CROSS_COMPILE ?=
-
 CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
-CFLAG = -O2 -fPIC -Wall
+CFLAGS = -O2 -Wall -fPIC
 
-all: libtty.a libtty.so
-	@echo make successfully!
+SLIB ?= libtty.a
+DLIB ?= libtty.so.0.1
+TARGET ?= $(SLIB) $(DLIB)
 
-libtty.a: tty.o
-	$(AR) crv $@ $<
+SRC_DIRS ?= .
 
-libtty.so: libtty.so.0.1
-	@ln -s libtty.so.0.1 libtty.so
+OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
 
-libtty.so.0.1: tty.o
-	$(CC) -shared $< -o $@
+INC_DIRS := include
+INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-tty.o: tty.c
-	$(CC) $(CFLAG) -c $<
+all: $(TARGET)
 
-.PHONY: all clean
+$(SLIB): $(OBJS)
+	echo $(OBJS)
+	$(AR) cvr $@ $^
+
+$(DLIB): $(OBJS)
+	$(CC) -shared $^ -o $@
+
+# c source
+%.o : %.c
+	$(CC) $(CFLAGS) $(INC_FLAGS) -c $< -o $@
+
+
+.PHONY: clean all
 
 clean:
-	@rm *.o libtty*
+	$(RM) -r $(OBJS) $(SLIB) $(DLIB)
+
