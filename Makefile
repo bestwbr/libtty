@@ -1,7 +1,7 @@
-CROSS_COMPILE ?=
+CROSS_COMPILE ?= arm-openwrt-linux-
 CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
-CFLAGS = -O2 -Wall -fPIC
+CFLAGS = -Os -Wall -fPIC
 
 SLIB ?= libtty.a
 DLIB ?= libtty.so.0.1

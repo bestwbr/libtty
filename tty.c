@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <poll.h>
 
 #include "tty.h"
 
@@ -107,6 +108,7 @@ static bool tty_set(tty_t *tty)
 	default:
 		options.c_cflag &= ~CSTOPB;
 	}
+
 	options.c_oflag &= ~OPOST;
 	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
 	options.c_cc[VTIME] = 1;
@@ -155,22 +157,27 @@ void tty_close(tty_t *tty)
 
 int tty_recv(tty_t *tty, char *buffer, int len, unsigned int timeout)
 {
-	int rlen,fs_sel;
-	fd_set fs_read;
-	struct timeval time;
-	FD_ZERO(&fs_read);
-	FD_SET(tty->fd, &fs_read);
-	time.tv_sec = timeout;
-	time.tv_usec = 0;
+	int rlen;
+	struct pollfd fdset[1];
+	int nfds = 1;
+	int rc;
+	fdset[0].fd = tty->fd;
+	fdset[0].events = POLLOUT;
 
-	fs_sel = select(tty->fd+1, &fs_read, NULL, NULL, &time);
-	if(fs_sel) {
+	rc = poll(fdset, nfds, timeout);
+	if (rc < 0) {
+		fprintf(stderr, "poll failed!\n");
+		return -1;
+	}
+	if (rc == 0) {
+		fprintf(stderr, "poll timeout\n");
+		return 0;
+	}
+
+	if (fdset[0].revents & POLLOUT) {
 		rlen = read(tty->fd, buffer, len);
 		return rlen;
 	}
-
-	fprintf(stderr, "receive data failed\n");
-	return -1;
 }
 
 int tty_send(tty_t *tty, char *buffer, int len)
