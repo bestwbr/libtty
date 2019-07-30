@@ -162,9 +162,9 @@ int tty_recv(tty_t *tty, char *buffer, int len, unsigned int timeout)
 	int nfds = 1;
 	int rc;
 	fdset[0].fd = tty->fd;
-	fdset[0].events = POLLOUT;
+	fdset[0].events = POLLIN;
 
-	rc = poll(fdset, nfds, timeout);
+	rc = poll(fdset, nfds, timeout * 1000);
 	if (rc < 0) {
 		fprintf(stderr, "poll failed!\n");
 		return -1;
@@ -174,10 +174,12 @@ int tty_recv(tty_t *tty, char *buffer, int len, unsigned int timeout)
 		return 0;
 	}
 
-	if (fdset[0].revents & POLLOUT) {
+	if (fdset[0].revents & POLLIN) {
 		rlen = read(tty->fd, buffer, len);
 		return rlen;
 	}
+
+	return 0;
 }
 
 int tty_send(tty_t *tty, char *buffer, int len)
